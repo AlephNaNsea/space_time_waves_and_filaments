@@ -103,15 +103,16 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     // =   Engine 3: Rolling Ocean Waves (ui_in[0])            =
     // =========================================================
     // Create a right-moving pseudo-sine (triangle) wave 
-    wire [8:0] flow1 = cx + speed_x4;
+    wire [9:0] flow1 = cx + speed_x4; // FIX: Widened to 10 bits
     wire [7:0] triangle1 = flow1[7:0] ^ {8{flow1[8]}}; // 0 to 127
     
     // Create a left-moving pseudo-sine wave going a bit slower
-    wire [8:0] flow2 = cx - (speed_x4 >> 1); 
+    wire [9:0] flow2 = cx - (speed_x4 >> 1); // FIX: Widened to 10 bits
     wire [7:0] triangle2 = flow2[7:0] ^ {8{flow2[8]}}; // 0 to 127
     
     // Combine the X-distortions with the Y-coordinate to create the wave height
-    wire [9:0] wave_height = cy + (triangle1 >> 1) + (triangle2 >> 1);
+    // FIX: Explicitly zero-padded the 8-bit shifts to match the 10-bit addition
+    wire [9:0] wave_height = cy + {2'b00, (triangle1 >> 1)} + {2'b00, (triangle2 >> 1)};
     
     // Scroll the whole surface downward
     wire [9:0] wave_anim = wave_height - speed_x4;
@@ -137,7 +138,6 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     wire [9:0] dist1 = max_d1 + (min_d1 >> 1); 
 
     // THE SECRET SAUCE: XOR the two qubit distances WITH the center distance
-    // This creates the chaotic, fractal "streaking lines" from Engine 0
     wire [9:0] entangled_field = dist0 ^ dist1 ^ oct_dist;
     
     // Animate the chaotic field
@@ -165,8 +165,8 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     wire [7:0] tri_y = flow_y[7:0] ^ {8{flow_y[8]}};
 
     // THE SECRET SAUCE: XOR the intersecting waves, then add the center distance
-    // This shatters the smooth waves into a chaotic, Sierpinski-like stormy grid
-    wire [9:0] tempest_base = (tri_x ^ tri_y) + oct_dist;
+    // FIX: Explicitly zero-pad the 8-bit XOR to match the 10-bit addition
+    wire [9:0] tempest_base = {2'b00, (tri_x ^ tri_y)} + oct_dist;
     
     // Animate the entire chaotic field so it boils and flows
     wire [9:0] tempest_anim = tempest_base - speed_x4;
@@ -245,9 +245,21 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     assign uo_out[1] = G[1];
     assign uo_out[0] = R[1]; 
 
-  // Unused pins
+    // Unused pins and explicitly ignored mathematical bits
     assign uio_out = 8'b0;
     assign uio_oe  = 8'b0;
-    wire _unused = &{ena, ui_in[7:5], uio_in};
+    
+    wire _unused = &{
+        ena, 
+        ui_in[7:5], 
+        uio_in,
+        cosmic_anim[9:7], 
+        XOR_tunnel[9:8], XOR_tunnel[3:0], 
+        web_ring_pos[9:7], 
+        wave_anim[9:8], wave_anim[4:0],
+        quantum_anim[9:7], 
+        flow1[9], flow2[9], flow_x[9], flow_y[9], 
+        tempest_anim[9:7]
+    }; 
 
 endmodule
