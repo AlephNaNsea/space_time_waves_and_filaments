@@ -6,18 +6,22 @@
 
 This project calculates continuously evolving procedural art in real-time for a 640x480 VGA display at 60Hz. Instead of relying on RAM or expensive DSP blocks for sines and cosines, the visual engines rely entirely on bitwise operations, XOR fractals, and overlapping triangle waves. An internal frame counter acts as the flow of "time," continuously shifting the geometry and color palettes to create a smooth 60fps animation.
 
+To fit within the strict routing density constraints of the Tiny Tapeout ASIC tile, the engines employ a mix of high-resolution 10-bit math and intentionally downscaled 6-bit logic to balance visual fidelity with physical silicon footprint.
+
 - [Read the full project datasheet](docs/info.md)
 
 ## Visual Engines
 
-A multiplexer routes one of four mathematical art engines to the VGA output based on the state of the input pins:
+A multiplexer routes one of six mathematical art engines to the VGA output based on the state of the input pins:
 
 * **Default (All switches off):** The Cosmic Web "Black Hole" (A rotational XOR fractal)
 * **Mode 1 (`ui_in[0]` HIGH):** Rolling Ocean Waves (Interfering pseudo-sine waves)
 * **Mode 2 (`ui_in[1]` HIGH):** Red, White, & Blue Spider Web (Distance-based geometric spokes and rings)
 * **Mode 3 (`ui_in[2]` HIGH):** The Centered Tunnel (A collapsing XOR geometry)
+* **Mode 4 (`ui_in[3]` HIGH):** Detailed Qubit Entanglement (A high-frequency, counter-rotating Sierpinski probability field simulating quantum interference)
+* **Mode 5 (`ui_in[4]` HIGH):** Super Low-Res Digital Tempest (A chaotic whirlpool rendered in chunky 16x16 macroblocks, placed on an extreme 6-bit "Math Diet" to bypass OpenLane routing congestion!)
 
-*(Note: The inputs have a built-in priority. `ui_in[2]` overrides `ui_in[1]`, which overrides `ui_in[0]`.)*
+*(Note: The inputs have a built-in strict priority. `ui_in[4]` overrides `ui_in[3]`, which overrides `ui_in[2]`, and so on down the chain.)*
 
 ## How to Test
 
@@ -26,12 +30,12 @@ To test the synthesizer, you will need to provide a standard **25.175 MHz clock*
 ### External Hardware Required
 * **Tiny VGA PMOD** (or compatible 3-bit-per-channel R2R DAC).
 * A standard VGA cable and a monitor capable of supporting 640x480 resolution at 60Hz.
-* DIP switches or buttons connected to the input pins to toggle the visual modes.
+* 5 DIP switches or buttons connected to the first five input pins (`ui_in[4:0]`) to toggle the visual modes.
 
 ### Setup
 1. Connect the VGA monitor to the output pins (`uo_out`) via the Tiny VGA PMOD.
 2. Apply the 25.175 MHz clock and reset the design. 
-3. You should immediately see the default **Cosmic Web** animation on the screen. Toggle the input pins to explore the other patterns.
+3. You should immediately see the default **Cosmic Web** animation on the screen. Toggle the input pins to explore the other five patterns.
 
 ---
 
