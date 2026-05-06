@@ -140,28 +140,28 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     wire [1:0] q_B = q_core ? 2'b11 : q_thread ? 2'b11 : q_cloud ? 2'b10 : 2'b01;
 
     // =========================================================
-    // =   Engine 5: Low-Res Digital Tempest (ui_in[4])        =
+    // =   Engine 5: Super Low-Res Tempest (ui_in[4])          =
     // =========================================================
-    // THE HACK: Downscale by shifting right 3 bits (divide by 8)
-    // This drops the logic from 10-bit to 7-bit, fixing the ASIC routing error!
-    wire [6:0] t_cx = cx[9:3];
-    wire [6:0] t_cy = cy[9:3];
-    wire [6:0] t_speed = speed_x4[9:3];
+    // THE HACK: Downscale by shifting right 4 bits (divide by 16)
+    // Drops the heavy whirlpool logic down to just 6 bits!
+    wire [5:0] t_cx = cx[9:4];
+    wire [5:0] t_cy = cy[9:4];
+    wire [5:0] t_speed = speed_x4[9:4];
 
-    wire [6:0] flow_x = t_cx + t_speed;
-    wire [6:0] flow_y = t_cy - (t_speed >> 1); 
+    wire [5:0] flow_x = t_cx + t_speed;
+    wire [5:0] flow_y = t_cy - {1'b0, t_speed[5:1]}; 
 
-    wire [5:0] tri_x = flow_x[5:0] ^ {6{flow_x[6]}};
-    wire [5:0] tri_y = flow_y[5:0] ^ {6{flow_y[6]}};
+    wire [4:0] tri_x = flow_x[4:0] ^ {5{flow_x[5]}};
+    wire [4:0] tri_y = flow_y[4:0] ^ {5{flow_y[5]}};
 
-    wire [6:0] t_oct_dist = oct_dist[9:3];
+    wire [5:0] t_oct_dist = oct_dist[9:4];
+    wire [5:0] tempest_base = {1'b0, (tri_x ^ tri_y)} + t_oct_dist;
+    wire [5:0] tempest_anim = tempest_base - t_speed;
 
-    wire [6:0] tempest_base = {1'b0, (tri_x ^ tri_y)} + t_oct_dist;
-    wire [6:0] tempest_anim = tempest_base - t_speed;
-
-    wire t_foam  = (tempest_anim[5:0] < 2); 
-    wire t_crest = (tempest_anim[5:0] < 4); 
-    wire t_mid   = (tempest_anim[5:0] < 8); 
+    // Thresholds scaled down for the new 6-bit data width
+    wire t_foam  = (tempest_anim[4:0] < 2); 
+    wire t_crest = (tempest_anim[4:0] < 5); 
+    wire t_mid   = (tempest_anim[4:0] < 12); 
 
     wire [1:0] t_R = t_foam ? 2'b11 : t_crest ? 2'b00 : t_mid ? 2'b00 : 2'b00;
     wire [1:0] t_G = t_foam ? 2'b11 : t_crest ? 2'b11 : t_mid ? 2'b10 : 2'b00;
@@ -230,7 +230,7 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
         wave_anim[9:8], wave_anim[4:0],
         quantum_anim[9:7], 
         flow1[9], flow2[9], 
-        tempest_anim[6]
+        tempest_anim[5] // the top bit of the 6-bit tempest_anim is unused
     }; 
 
 endmodule
