@@ -153,6 +153,33 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     wire [1:0] q_G = q_core ? 2'b11 : q_thread ? 2'b00 : q_cloud ? 2'b00 : 2'b00;
     wire [1:0] q_B = q_core ? 2'b11 : q_thread ? 2'b11 : q_cloud ? 2'b10 : 2'b01;
 
+    // =========================================================
+    // =   Engine 5: The Digital Tempest / Whirlpool (ui_in[4])=
+    // =========================================================
+    // Flow intersecting currents in different directions
+    wire [9:0] flow_x = cx + speed_x4;
+    wire [9:0] flow_y = cy - (speed_x4 >> 1); 
+
+    // Convert to triangle waves (amplitude peaks)
+    wire [7:0] tri_x = flow_x[7:0] ^ {8{flow_x[8]}};
+    wire [7:0] tri_y = flow_y[7:0] ^ {8{flow_y[8]}};
+
+    // THE SECRET SAUCE: XOR the intersecting waves, then add the center distance
+    // This shatters the smooth waves into a chaotic, Sierpinski-like stormy grid
+    wire [9:0] tempest_base = (tri_x ^ tri_y) + oct_dist;
+    
+    // Animate the entire chaotic field so it boils and flows
+    wire [9:0] tempest_anim = tempest_base - speed_x4;
+
+    // Isolate specific numerical bands to create sharp foam, crests, and deep water
+    wire t_foam  = (tempest_anim[6:0] < 10); // Razor-sharp whitecaps
+    wire t_crest = (tempest_anim[6:0] < 25); // Mid-level cyan waves
+    wire t_mid   = (tempest_anim[6:0] < 60); // Deep teal rolling swells
+
+    // Stormy Ocean Palette
+    wire [1:0] t_R = t_foam ? 2'b11 : t_crest ? 2'b00 : t_mid ? 2'b00 : 2'b00;
+    wire [1:0] t_G = t_foam ? 2'b11 : t_crest ? 2'b11 : t_mid ? 2'b10 : 2'b00;
+    wire [1:0] t_B = t_foam ? 2'b11 : t_crest ? 2'b11 : t_mid ? 2'b11 : 2'b01;
 
     // =========================================================
     // =                 Main Output Multiplexer               =
@@ -165,6 +192,11 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
 
         if (!video_active) begin
             R = 2'b00; G = 2'b00; B = 2'b00;
+        end else if (ui_in[4]) begin
+            // MODE (ui_in[4]): The Digital Tempest
+            R = t_R;
+            G = t_G;
+            B = t_B;
         end else if (ui_in[3]) begin
             // MODE (ui_in[3]): Qubit Superposition State
             R = q_R;
@@ -216,6 +248,6 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
   // Unused pins
     assign uio_out = 8'b0;
     assign uio_oe  = 8'b0;
-    wire _unused = &{ena, ui_in[7:4], uio_in};
+    wire _unused = &{ena, ui_in[7:5], uio_in};
 
 endmodule
