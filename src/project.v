@@ -102,81 +102,67 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     // =========================================================
     // =   Engine 3: Rolling Ocean Waves (ui_in[0])            =
     // =========================================================
-    // Create a right-moving pseudo-sine (triangle) wave 
-    wire [9:0] flow1 = cx + speed_x4; // FIX: Widened to 10 bits
-    wire [7:0] triangle1 = flow1[7:0] ^ {8{flow1[8]}}; // 0 to 127
+    wire [9:0] flow1 = cx + speed_x4; 
+    wire [7:0] triangle1 = flow1[7:0] ^ {8{flow1[8]}}; 
     
-    // Create a left-moving pseudo-sine wave going a bit slower
-    wire [9:0] flow2 = cx - (speed_x4 >> 1); // FIX: Widened to 10 bits
-    wire [7:0] triangle2 = flow2[7:0] ^ {8{flow2[8]}}; // 0 to 127
+    wire [9:0] flow2 = cx - (speed_x4 >> 1); 
+    wire [7:0] triangle2 = flow2[7:0] ^ {8{flow2[8]}}; 
     
-    // Combine the X-distortions with the Y-coordinate to create the wave height
-    // FIX: Explicitly zero-padded the 8-bit shifts to match the 10-bit addition
     wire [9:0] wave_height = cy + {2'b00, (triangle1 >> 1)} + {2'b00, (triangle2 >> 1)};
-    
-    // Scroll the whole surface downward
     wire [9:0] wave_anim = wave_height - speed_x4;
     
-    // Assign sea colors: cyan and blue with tiny white foam crests
     wire [1:0] gen_R = (wave_anim[6:5] == 2'b11) ? 2'b01 : 2'b00; 
     wire [1:0] gen_G = wave_anim[7:6];
-    wire [1:0] gen_B = 2'b11; // Solid blue base layer
+    wire [1:0] gen_B = 2'b11; 
     
     // =========================================================
     // =   Engine 4: Detailed Qubit Entanglement (ui_in[3])    =
     // =========================================================
-    // Qubit 0 (Left well): X=220, Y=240. 
     wire [9:0] dx0 = (h_count > 220) ? (h_count - 220) : (220 - h_count);
     wire [9:0] max_d0 = (dx0 > cy) ? dx0 : cy;
     wire [9:0] min_d0 = (dx0 > cy) ? cy : dx0;
     wire [9:0] dist0 = max_d0 + (min_d0 >> 1); 
 
-    // Qubit 1 (Right well): X=420, Y=240
     wire [9:0] dx1 = (h_count > 420) ? (h_count - 420) : (420 - h_count);
     wire [9:0] max_d1 = (dx1 > cy) ? dx1 : cy;
     wire [9:0] min_d1 = (dx1 > cy) ? cy : dx1;
     wire [9:0] dist1 = max_d1 + (min_d1 >> 1); 
 
-    // THE SECRET SAUCE: XOR the two qubit distances WITH the center distance
     wire [9:0] entangled_field = dist0 ^ dist1 ^ oct_dist;
-    
-    // Animate the chaotic field
     wire [9:0] quantum_anim = entangled_field - speed_x4;
 
-    // Isolate specific numerical bands to create sharp structures
-    wire q_core   = (quantum_anim[6:0] < 5);  // Searing hot probability peaks
-    wire q_thread = (quantum_anim[6:0] < 15); // Streaking entanglement filaments
-    wire q_cloud  = (quantum_anim[6:0] < 35); // Ambient probability aura
+    wire q_core   = (quantum_anim[6:0] < 5);  
+    wire q_thread = (quantum_anim[6:0] < 15); 
+    wire q_cloud  = (quantum_anim[6:0] < 35); 
 
-    // Quantum Heatmap Palette (White Cores, Magenta Threads, Deep Purple Aura)
     wire [1:0] q_R = q_core ? 2'b11 : q_thread ? 2'b11 : q_cloud ? 2'b01 : 2'b00;
     wire [1:0] q_G = q_core ? 2'b11 : q_thread ? 2'b00 : q_cloud ? 2'b00 : 2'b00;
     wire [1:0] q_B = q_core ? 2'b11 : q_thread ? 2'b11 : q_cloud ? 2'b10 : 2'b01;
 
     // =========================================================
-    // =   Engine 5: The Digital Tempest / Whirlpool (ui_in[4])=
+    // =   Engine 5: Low-Res Digital Tempest (ui_in[4])        =
     // =========================================================
-    // Flow intersecting currents in different directions
-    wire [9:0] flow_x = cx + speed_x4;
-    wire [9:0] flow_y = cy - (speed_x4 >> 1); 
+    // THE HACK: Downscale by shifting right 3 bits (divide by 8)
+    // This drops the logic from 10-bit to 7-bit, fixing the ASIC routing error!
+    wire [6:0] t_cx = cx[9:3];
+    wire [6:0] t_cy = cy[9:3];
+    wire [6:0] t_speed = speed_x4[9:3];
 
-    // Convert to triangle waves (amplitude peaks)
-    wire [7:0] tri_x = flow_x[7:0] ^ {8{flow_x[8]}};
-    wire [7:0] tri_y = flow_y[7:0] ^ {8{flow_y[8]}};
+    wire [6:0] flow_x = t_cx + t_speed;
+    wire [6:0] flow_y = t_cy - (t_speed >> 1); 
 
-    // THE SECRET SAUCE: XOR the intersecting waves, then add the center distance
-    // FIX: Explicitly zero-pad the 8-bit XOR to match the 10-bit addition
-    wire [9:0] tempest_base = {2'b00, (tri_x ^ tri_y)} + oct_dist;
-    
-    // Animate the entire chaotic field so it boils and flows
-    wire [9:0] tempest_anim = tempest_base - speed_x4;
+    wire [5:0] tri_x = flow_x[5:0] ^ {6{flow_x[6]}};
+    wire [5:0] tri_y = flow_y[5:0] ^ {6{flow_y[6]}};
 
-    // Isolate specific numerical bands to create sharp foam, crests, and deep water
-    wire t_foam  = (tempest_anim[6:0] < 10); // Razor-sharp whitecaps
-    wire t_crest = (tempest_anim[6:0] < 25); // Mid-level cyan waves
-    wire t_mid   = (tempest_anim[6:0] < 60); // Deep teal rolling swells
+    wire [6:0] t_oct_dist = oct_dist[9:3];
 
-    // Stormy Ocean Palette
+    wire [6:0] tempest_base = {1'b0, (tri_x ^ tri_y)} + t_oct_dist;
+    wire [6:0] tempest_anim = tempest_base - t_speed;
+
+    wire t_foam  = (tempest_anim[5:0] < 2); 
+    wire t_crest = (tempest_anim[5:0] < 4); 
+    wire t_mid   = (tempest_anim[5:0] < 8); 
+
     wire [1:0] t_R = t_foam ? 2'b11 : t_crest ? 2'b00 : t_mid ? 2'b00 : 2'b00;
     wire [1:0] t_G = t_foam ? 2'b11 : t_crest ? 2'b11 : t_mid ? 2'b10 : 2'b00;
     wire [1:0] t_B = t_foam ? 2'b11 : t_crest ? 2'b11 : t_mid ? 2'b11 : 2'b01;
@@ -187,50 +173,35 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     reg [1:0] R, G, B;
     
     always @(*) begin
-        // Default assignment to prevent latches
         R = 2'b00; G = 2'b00; B = 2'b00;
 
         if (!video_active) begin
             R = 2'b00; G = 2'b00; B = 2'b00;
         end else if (ui_in[4]) begin
-            // MODE (ui_in[4]): The Digital Tempest
-            R = t_R;
-            G = t_G;
-            B = t_B;
+            R = t_R; G = t_G; B = t_B;
         end else if (ui_in[3]) begin
-            // MODE (ui_in[3]): Qubit Superposition State
-            R = q_R;
-            G = q_G;
-            B = q_B;
+            R = q_R; G = q_G; B = q_B;
         end else if (ui_in[2]) begin
-            // PRIORITY MODE (ui_in[2]): Centered Tunnel 
             R = XOR_tunnel[5:4]; 
             G = XOR_tunnel[6:5]; 
             B = XOR_tunnel[7:6];
         end else if (ui_in[1]) begin
-            // MODE (ui_in[1]): Red, White, & Blue Spiderweb
             if (show_web) begin
-                R = 2'b11; G = 2'b11; B = 2'b11; // Crisp White threads
+                R = 2'b11; G = 2'b11; B = 2'b11; 
             end else if (web_bg_band) begin
-                R = 2'b11; G = 2'b00; B = 2'b00; // Solid Red background bands
+                R = 2'b11; G = 2'b00; B = 2'b00; 
             end else begin
-                R = 2'b00; G = 2'b00; B = 2'b11; // Solid Blue background bands
+                R = 2'b00; G = 2'b00; B = 2'b11; 
             end
         end else if (ui_in[0]) begin
-            // MODE (ui_in[0]): Rolling Ocean Waves
-            R = gen_R;
-            G = gen_G;
-            B = gen_B;
+            R = gen_R; G = gen_G; B = gen_B;
         end else begin
-            // DEFAULT MODE (All buttons off): Cosmic Black Hole
             if (is_hot_node) begin
                 R = 2'b11; G = 2'b10; B = 2'b00; 
             end else if (is_filament) begin
                 R = 2'b01; G = 2'b00; B = 2'b11; 
             end else if (is_glow) begin
                 R = 2'b00; G = 2'b00; B = 2'b01; 
-            end else begin
-                R = 2'b00; G = 2'b00; B = 2'b00; 
             end
         end
     end
@@ -258,8 +229,8 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
         web_ring_pos[9:7], 
         wave_anim[9:8], wave_anim[4:0],
         quantum_anim[9:7], 
-        flow1[9], flow2[9], flow_x[9], flow_y[9], 
-        tempest_anim[9:7]
+        flow1[9], flow2[9], 
+        tempest_anim[6]
     }; 
 
 endmodule
