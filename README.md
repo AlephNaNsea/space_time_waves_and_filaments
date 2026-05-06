@@ -9,6 +9,7 @@ This project calculates continuously evolving procedural art in real-time for a 
 To fit within the strict routing density constraints of the Tiny Tapeout ASIC tile, the engines employ a mix of high-resolution 10-bit math and intentionally downscaled 6-bit logic to balance visual fidelity with physical silicon footprint.
 
 - [Read the full project datasheet](docs/info.md)
+- [View the 3D GDS layout](https://gds-viewer.tinytapeout.com/?model=https://alephnansea.github.io/space_time_waves_and_filaments/tinytapeout.oas&pdk=sky130A)
 
 ## Visual Engines
 
