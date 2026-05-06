@@ -1,8 +1,39 @@
 ![](../../workflows/gds/badge.svg) ![](../../workflows/docs/badge.svg) ![](../../workflows/test/badge.svg) ![](../../workflows/fpga/badge.svg)
 
-# Tiny Tapeout Verilog Project Template
+# Space-Time Waves and Filaments
 
-- [Read the documentation for project](docs/info.md)
+**A purely combinatorial generative VGA hardware video synthesizer for Tiny Tapeout.**
+
+This project calculates continuously evolving procedural art in real-time for a 640x480 VGA display at 60Hz. Instead of relying on RAM or expensive DSP blocks for sines and cosines, the visual engines rely entirely on bitwise operations, XOR fractals, and overlapping triangle waves. An internal frame counter acts as the flow of "time," continuously shifting the geometry and color palettes to create a smooth 60fps animation.
+
+- [Read the full project datasheet](docs/info.md)
+
+## Visual Engines
+
+A multiplexer routes one of four mathematical art engines to the VGA output based on the state of the input pins:
+
+* **Default (All switches off):** The Cosmic Web "Black Hole" (A rotational XOR fractal)
+* **Mode 1 (`ui_in[0]` HIGH):** Rolling Ocean Waves (Interfering pseudo-sine waves)
+* **Mode 2 (`ui_in[1]` HIGH):** Red, White, & Blue Spider Web (Distance-based geometric spokes and rings)
+* **Mode 3 (`ui_in[2]` HIGH):** The Centered Tunnel (A collapsing XOR geometry)
+
+*(Note: The inputs have a built-in priority. `ui_in[2]` overrides `ui_in[1]`, which overrides `ui_in[0]`.)*
+
+## How to Test
+
+To test the synthesizer, you will need to provide a standard **25.175 MHz clock** to drive the VGA timing correctly. 
+
+### External Hardware Required
+* **Tiny VGA PMOD** (or compatible 3-bit-per-channel R2R DAC).
+* A standard VGA cable and a monitor capable of supporting 640x480 resolution at 60Hz.
+* DIP switches or buttons connected to the input pins to toggle the visual modes.
+
+### Setup
+1. Connect the VGA monitor to the output pins (`uo_out`) via the Tiny VGA PMOD.
+2. Apply the 25.175 MHz clock and reset the design. 
+3. You should immediately see the default **Cosmic Web** animation on the screen. Toggle the input pins to explore the other patterns.
+
+---
 
 ## What is Tiny Tapeout?
 
@@ -10,33 +41,10 @@ Tiny Tapeout is an educational project that aims to make it easier and cheaper t
 
 To learn more and get started, visit https://tinytapeout.com.
 
-## Set up your Verilog project
-
-1. Add your Verilog files to the `src` folder.
-2. Edit the [info.yaml](info.yaml) and update information about your project, paying special attention to the `source_files` and `top_module` properties. If you are upgrading an existing Tiny Tapeout project, check out our [online info.yaml migration tool](https://tinytapeout.github.io/tt-yaml-upgrade-tool/).
-3. Edit [docs/info.md](docs/info.md) and add a description of your project.
-4. Adapt the testbench to your design. See [test/README.md](test/README.md) for more information.
-
-The GitHub action will automatically build the ASIC files using [LibreLane](https://www.zerotoasiccourse.com/terminology/librelane/).
-
-## Enable GitHub actions to build the results page
-
-- [Enabling GitHub Pages](https://tinytapeout.com/faq/#my-github-action-is-failing-on-the-pages-part)
-
-## Resources
+### Resources
 
 - [FAQ](https://tinytapeout.com/faq/)
 - [Digital design lessons](https://tinytapeout.com/digital_design/)
 - [Learn how semiconductors work](https://tinytapeout.com/siliwiz/)
 - [Join the community](https://tinytapeout.com/discord)
 - [Build your design locally](https://www.tinytapeout.com/guides/local-hardening/)
-
-## What next?
-
-- [Submit your design to the next shuttle](https://app.tinytapeout.com/).
-- Edit [this README](README.md) and explain your design, how it works, and how to test it.
-- Share your project on your social network of choice:
-  - LinkedIn [#tinytapeout](https://www.linkedin.com/search/results/content/?keywords=%23tinytapeout) [@TinyTapeout](https://www.linkedin.com/company/100708654/)
-  - Mastodon [#tinytapeout](https://chaos.social/tags/tinytapeout) [@matthewvenn](https://chaos.social/@matthewvenn)
-  - X (formerly Twitter) [#tinytapeout](https://twitter.com/hashtag/tinytapeout) [@tinytapeout](https://twitter.com/tinytapeout)
-  - Bluesky [@tinytapeout.com](https://bsky.app/profile/tinytapeout.com)
