@@ -120,6 +120,39 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     wire [1:0] gen_R = (wave_anim[6:5] == 2'b11) ? 2'b01 : 2'b00; 
     wire [1:0] gen_G = wave_anim[7:6];
     wire [1:0] gen_B = 2'b11; // Solid blue base layer
+    
+    // =========================================================
+    // =   Engine 4: Detailed Qubit Entanglement (ui_in[3])    =
+    // =========================================================
+    // Qubit 0 (Left well): X=220, Y=240. 
+    wire [9:0] dx0 = (h_count > 220) ? (h_count - 220) : (220 - h_count);
+    wire [9:0] max_d0 = (dx0 > cy) ? dx0 : cy;
+    wire [9:0] min_d0 = (dx0 > cy) ? cy : dx0;
+    wire [9:0] dist0 = max_d0 + (min_d0 >> 1); 
+
+    // Qubit 1 (Right well): X=420, Y=240
+    wire [9:0] dx1 = (h_count > 420) ? (h_count - 420) : (420 - h_count);
+    wire [9:0] max_d1 = (dx1 > cy) ? dx1 : cy;
+    wire [9:0] min_d1 = (dx1 > cy) ? cy : dx1;
+    wire [9:0] dist1 = max_d1 + (min_d1 >> 1); 
+
+    // THE SECRET SAUCE: XOR the two qubit distances WITH the center distance
+    // This creates the chaotic, fractal "streaking lines" from Engine 0
+    wire [9:0] entangled_field = dist0 ^ dist1 ^ oct_dist;
+    
+    // Animate the chaotic field
+    wire [9:0] quantum_anim = entangled_field - speed_x4;
+
+    // Isolate specific numerical bands to create sharp structures
+    wire q_core   = (quantum_anim[6:0] < 5);  // Searing hot probability peaks
+    wire q_thread = (quantum_anim[6:0] < 15); // Streaking entanglement filaments
+    wire q_cloud  = (quantum_anim[6:0] < 35); // Ambient probability aura
+
+    // Quantum Heatmap Palette (White Cores, Magenta Threads, Deep Purple Aura)
+    wire [1:0] q_R = q_core ? 2'b11 : q_thread ? 2'b11 : q_cloud ? 2'b01 : 2'b00;
+    wire [1:0] q_G = q_core ? 2'b11 : q_thread ? 2'b00 : q_cloud ? 2'b00 : 2'b00;
+    wire [1:0] q_B = q_core ? 2'b11 : q_thread ? 2'b11 : q_cloud ? 2'b10 : 2'b01;
+
 
     // =========================================================
     // =                 Main Output Multiplexer               =
@@ -132,6 +165,11 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
 
         if (!video_active) begin
             R = 2'b00; G = 2'b00; B = 2'b00;
+        end else if (ui_in[3]) begin
+            // MODE (ui_in[3]): Qubit Superposition State
+            R = q_R;
+            G = q_G;
+            B = q_B;
         end else if (ui_in[2]) begin
             // PRIORITY MODE (ui_in[2]): Centered Tunnel 
             R = XOR_tunnel[5:4]; 
@@ -175,9 +213,9 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     assign uo_out[1] = G[1];
     assign uo_out[0] = R[1]; 
 
-    // Unused pins
+  // Unused pins
     assign uio_out = 8'b0;
     assign uio_oe  = 8'b0;
-    wire _unused = &{ena, ui_in[7:3], uio_in}; 
+    wire _unused = &{ena, ui_in[7:4], uio_in};
 
 endmodule
