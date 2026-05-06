@@ -1,6 +1,6 @@
 `default_nettype none
 
-module tt_um_vga_fractals_generative(
+module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     input  wire [7:0] ui_in,    
     output wire [7:0] uo_out,   // VGA PMOD Outputs
     input  wire [7:0] uio_in,   
