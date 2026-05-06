@@ -28,7 +28,7 @@ module tb ();
 `endif
 
   // Replace tt_um_example with your module name:
-  tt_um_example user_project (
+  tt_um_AlephNaNsea_space_time_waves_and_filaments user_project (
 
       // Include power ports for the Gate Level test:
 `ifdef GL_TEST
