@@ -39,7 +39,7 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
         else if (h_count == 799 && v_count == 524) frame_timer <= frame_timer + 1;
     end
 
-    // Pure, fast forward time flow (Time Reversal removed to save global routing layout)
+    // Pure, fast forward time flow
     wire [9:0] speed_x4 = frame_timer[9:0] << 2; 
 
     // =========================================================
@@ -119,7 +119,6 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     // =========================================================
     // =   Engine 4: Detailed Qubit Entanglement (ui_in[3])    =
     // =========================================================
-    // Glorious 10-bit resolution preserved!
     wire [9:0] dx0 = (h_count > 220) ? (h_count - 220) : (220 - h_count);
     wire [9:0] max_d0 = (dx0 > cy) ? dx0 : cy;
     wire [9:0] min_d0 = (dx0 > cy) ? cy : dx0;
@@ -142,31 +141,31 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     wire [1:0] q_B = q_core ? 2'b11 : q_thread ? 2'b11 : q_cloud ? 2'b10 : 2'b01;
 
     // =========================================================
-    // =   Engine 5: 7-Bit Turbulent Tempest (ui_in[4])        =
+    // =   Engine 5: 6-Bit Turbulent Tempest (ui_in[4])        =
     // =========================================================
-    // THE HACK: Upgraded from 6-bit to 7-bit logic (divide by 8)
-    // Adds just enough adders/XORs to push the chip to ~95% utilization!
-    wire [6:0] t_cx = cx[9:3];
-    wire [6:0] t_cy = cy[9:3];
-    wire [6:0] t_speed = speed_x4[9:3];
+    // THE HACK: Scaled down to 6-bit to fit routing layout safely,
+    // but preserving the turbulence injection for frothy wave chop!
+    wire [5:0] t_cx = cx[9:4];
+    wire [5:0] t_cy = cy[9:4];
+    wire [5:0] t_speed = speed_x4[9:4];
 
-    wire [6:0] flow_x = t_cx + t_speed;
-    wire [6:0] flow_y = t_cy - {1'b0, t_speed[6:1]}; 
+    wire [5:0] flow_x = t_cx + t_speed;
+    wire [5:0] flow_y = t_cy - {1'b0, t_speed[5:1]}; 
 
-    wire [5:0] tri_x = flow_x[5:0] ^ {6{flow_x[6]}};
-    wire [5:0] tri_y = flow_y[5:0] ^ {6{flow_y[6]}};
+    wire [4:0] tri_x = flow_x[4:0] ^ {5{flow_x[5]}};
+    wire [4:0] tri_y = flow_y[4:0] ^ {5{flow_y[5]}};
 
-    wire [6:0] t_oct_dist = oct_dist[9:3];
-    wire [6:0] tempest_base = {1'b0, (tri_x ^ tri_y)} + t_oct_dist;
+    wire [5:0] t_oct_dist = oct_dist[9:4];
+    wire [5:0] tempest_base = {1'b0, (tri_x ^ tri_y)} + t_oct_dist;
     
-    // THE TURBULENCE INJECTION: Eats a few more gates and adds frothy chop to the waves
-    wire [6:0] turbulence = t_cx ^ t_cy;
-    wire [6:0] tempest_anim = tempest_base - t_speed + {1'b0, turbulence[6:1]};
+    // THE TURBULENCE INJECTION: Kept for visual complexity
+    wire [5:0] turbulence = t_cx ^ t_cy;
+    wire [5:0] tempest_anim = tempest_base - t_speed + {1'b0, turbulence[5:1]};
 
-    // Thresholds scaled up to fit the new 7-bit math space
-    wire t_foam  = (tempest_anim[5:0] < 6); 
-    wire t_crest = (tempest_anim[5:0] < 14); 
-    wire t_mid   = (tempest_anim[5:0] < 30); 
+    // The Beefy Thresholds scaled for 6-bit
+    wire t_foam  = (tempest_anim[4:0] < 3); 
+    wire t_crest = (tempest_anim[4:0] < 7); 
+    wire t_mid   = (tempest_anim[4:0] < 15); 
 
     wire [1:0] t_R = t_foam ? 2'b11 : t_crest ? 2'b00 : t_mid ? 2'b00 : 2'b00;
     wire [1:0] t_G = t_foam ? 2'b11 : t_crest ? 2'b11 : t_mid ? 2'b10 : 2'b00;
@@ -233,14 +232,14 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     
     wire _unused = &{
         ena, 
-        ui_in[7:5], // All global modifiers are permanently retired!
+        ui_in[7:5], 
         uio_in,
         cosmic_anim[9:7], 
         XOR_tunnel[9:8], XOR_tunnel[3:0], 
         web_ring_pos[9:7], 
         mesh_anim[9:7], 
         quantum_anim[9:7], 
-        tempest_anim[6], // Sinking the top bit of the new 7-bit wire
+        tempest_anim[5], // Sinking the top bit of the new 6-bit wire
         turbulence[0]    // Sinking the unused bottom bit of the turbulence wire
     }; 
 
