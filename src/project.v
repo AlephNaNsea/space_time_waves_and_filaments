@@ -32,15 +32,18 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     wire hsync = ~(h_count >= 656 && h_count < 752); 
     wire vsync = ~(v_count >= 490 && v_count < 492); 
 
-    // --- Animation Timers ---
+    // --- Animation Timers & Global Modifiers ---
     reg [21:0] frame_timer;
     always @(posedge clk) begin
         if (!rst_n) frame_timer <= 0;
         else if (h_count == 799 && v_count == 524) frame_timer <= frame_timer + 1;
     end
 
-    // Increments by 4 every frame for smooth 60fps flow
-    wire [9:0] speed_x4 = frame_timer[9:0] << 2; 
+    // MODIFIER (ui_in[6]): Hyperspace Overdrive (Fast speed)
+    wire [9:0] raw_speed = ui_in[6] ? (frame_timer[9:0] << 3) : (frame_timer[9:0] << 2);
+    
+    // MODIFIER (ui_in[5]): Time Reversal (Invert timer)
+    wire [9:0] speed_x4  = ui_in[5] ? ~raw_speed : raw_speed; 
 
     // =========================================================
     // =   Shared Geometry: Center Origin & Octagon Math       =
@@ -145,6 +148,8 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     // =========================================================
     // =   Engine 5: Super Low-Res Tempest (ui_in[4])          =
     // =========================================================
+    // THE HACK: Downscale by shifting right 4 bits (divide by 16)
+    // Drops the heavy whirlpool logic down to just 6 bits to save placement routing space!
     wire [5:0] t_cx = cx[9:4];
     wire [5:0] t_cy = cy[9:4];
     wire [5:0] t_speed = speed_x4[9:4];
@@ -203,6 +208,7 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
                 R = 2'b00; G = 2'b00; B = 2'b01; 
             end
         end else begin
+            // DEFAULT: The Cosmic Web "Black Hole"
             if (is_hot_node) begin
                 R = 2'b11; G = 2'b10; B = 2'b00; 
             end else if (is_filament) begin
@@ -213,15 +219,20 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
         end
     end
 
+    // MODIFIER (ui_in[7]): Antimatter Palette Inversion
+    wire [1:0] final_R = ui_in[7] ? ~R : R;
+    wire [1:0] final_G = ui_in[7] ? ~G : G;
+    wire [1:0] final_B = ui_in[7] ? ~B : B;
+
     // --- TinyVGA PMOD Explicit Output Mapping ---
     assign uo_out[7] = hsync;
-    assign uo_out[6] = B[0];
-    assign uo_out[5] = G[0];
-    assign uo_out[4] = R[0];
+    assign uo_out[6] = final_B[0];
+    assign uo_out[5] = final_G[0];
+    assign uo_out[4] = final_R[0];
     assign uo_out[3] = vsync;
-    assign uo_out[2] = B[1];
-    assign uo_out[1] = G[1];
-    assign uo_out[0] = R[1]; 
+    assign uo_out[2] = final_B[1];
+    assign uo_out[1] = final_G[1];
+    assign uo_out[0] = final_R[1]; 
 
     // Unused pins and explicitly ignored mathematical bits
     assign uio_out = 8'b0;
@@ -229,7 +240,6 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     
     wire _unused = &{
         ena, 
-        ui_in[7:5], 
         uio_in,
         cosmic_anim[9:7], 
         XOR_tunnel[9:8], XOR_tunnel[3:0], 
