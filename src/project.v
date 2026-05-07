@@ -52,9 +52,7 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     wire [9:0] min_d = (cx > cy) ? cy : cx;
     wire [9:0] oct_dist = max_d + (min_d >> 1); 
 
-    // =========================================================
-    // =   Engine 0: The Cosmic Web "Black Hole" (DEFAULT)     =
-    // =========================================================
+    // Shared Base Accretion Disk Math (Used by Default AND ui_in[0])
     wire [9:0] m_rot1_x = cx + (cy >> 1);
     wire [9:0] m_rot1_y = (cy > (cx >> 1)) ? (cy - (cx >> 1)) : ((cx >> 1) - cy);
     wire [9:0] max_m1 = (m_rot1_x > m_rot1_y) ? m_rot1_x : m_rot1_y;
@@ -67,6 +65,9 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     wire [9:0] min_m2 = (m_rot2_x > m_rot2_y) ? m_rot2_y : m_rot2_x;
     wire [9:0] oct_m2 = max_m2 + (min_m2 >> 1);
 
+    // =========================================================
+    // =   Engine 0: The Cosmic Web "Black Hole" (DEFAULT)     =
+    // =========================================================
     wire [9:0] cosmic_val = oct_dist ^ oct_m1 ^ oct_m2;
     wire [9:0] cosmic_anim = cosmic_val + speed_x4; 
 
@@ -100,20 +101,22 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     wire show_web = is_spoke | is_ring;
 
     // =========================================================
-    // =   Engine 3: Rolling Ocean Waves (ui_in[0])            =
+    // =   Engine 3: 16-Point "Super-Mesh" Star (ui_in[0])     =
     // =========================================================
-    wire [9:0] flow1 = cx + speed_x4; 
-    wire [7:0] triangle1 = flow1[7:0] ^ {8{flow1[8]}}; 
-    
-    wire [9:0] flow2 = cx - (speed_x4 >> 1); 
-    wire [7:0] triangle2 = flow2[7:0] ^ {8{flow2[8]}}; 
-    
-    wire [9:0] wave_height = cy + {2'b00, (triangle1 >> 1)} + {2'b00, (triangle2 >> 1)};
-    wire [9:0] wave_anim = wave_height - speed_x4;
-    
-    wire [1:0] gen_R = (wave_anim[6:5] == 2'b11) ? 2'b01 : 2'b00; 
-    wire [1:0] gen_G = wave_anim[7:6];
-    wire [1:0] gen_B = 2'b11; 
+    // The Rotated Core (45-Degree Shift)
+    wire [9:0] rx = (cx + cy) >> 1; 
+    wire [9:0] ry = ((cx > cy) ? (cx - cy) : (cy - cx)) >> 1;
+    wire [9:0] max_r = (rx > ry) ? rx : ry;
+    wire [9:0] min_r = (rx > ry) ? ry : rx;
+    wire [9:0] oct_r = max_r + (min_r >> 1);
+
+    // 16-Point Collision (Reuses oct_m1 and oct_m2 to save ASIC area!)
+    wire [9:0] mesh_val = oct_dist ^ oct_m1 ^ oct_m2 ^ oct_r;
+    wire [9:0] mesh_anim = mesh_val + speed_x4; 
+
+    wire mesh_hot  = (mesh_anim[6:0] < 6);   
+    wire mesh_fila = (mesh_anim[6:0] < 18);  
+    wire mesh_glow = (mesh_anim[6:0] < 36);  
     
     // =========================================================
     // =   Engine 4: Detailed Qubit Entanglement (ui_in[3])    =
@@ -142,8 +145,6 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     // =========================================================
     // =   Engine 5: Super Low-Res Tempest (ui_in[4])          =
     // =========================================================
-    // THE HACK: Downscale by shifting right 4 bits (divide by 16)
-    // Drops the heavy whirlpool logic down to just 6 bits!
     wire [5:0] t_cx = cx[9:4];
     wire [5:0] t_cy = cy[9:4];
     wire [5:0] t_speed = speed_x4[9:4];
@@ -158,7 +159,6 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     wire [5:0] tempest_base = {1'b0, (tri_x ^ tri_y)} + t_oct_dist;
     wire [5:0] tempest_anim = tempest_base - t_speed;
 
-    // Thresholds scaled down for the new 6-bit data width
     wire t_foam  = (tempest_anim[4:0] < 2); 
     wire t_crest = (tempest_anim[4:0] < 5); 
     wire t_mid   = (tempest_anim[4:0] < 12); 
@@ -194,7 +194,14 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
                 R = 2'b00; G = 2'b00; B = 2'b11; 
             end
         end else if (ui_in[0]) begin
-            R = gen_R; G = gen_G; B = gen_B;
+            // MODE (ui_in[0]): Super-Meshed 16-Point Star
+            if (mesh_hot) begin
+                R = 2'b11; G = 2'b10; B = 2'b00; 
+            end else if (mesh_fila) begin
+                R = 2'b01; G = 2'b00; B = 2'b11; 
+            end else if (mesh_glow) begin
+                R = 2'b00; G = 2'b00; B = 2'b01; 
+            end
         end else begin
             if (is_hot_node) begin
                 R = 2'b11; G = 2'b10; B = 2'b00; 
@@ -227,10 +234,9 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
         cosmic_anim[9:7], 
         XOR_tunnel[9:8], XOR_tunnel[3:0], 
         web_ring_pos[9:7], 
-        wave_anim[9:8], wave_anim[4:0],
+        mesh_anim[9:7], 
         quantum_anim[9:7], 
-        flow1[9], flow2[9], 
-        tempest_anim[5] // the top bit of the 6-bit tempest_anim is unused
+        tempest_anim[5] 
     }; 
 
 endmodule
