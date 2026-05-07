@@ -39,11 +39,11 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
         else if (h_count == 799 && v_count == 524) frame_timer <= frame_timer + 1;
     end
 
-    // MODIFIER (ui_in[6]): Hyperspace Overdrive (Fast speed)
-    wire [9:0] raw_speed = ui_in[6] ? (frame_timer[9:0] << 3) : (frame_timer[9:0] << 2);
+    // Base animation speed (shifted by 2 for smooth 60fps)
+    wire [9:0] base_speed = frame_timer[9:0] << 2;
     
     // MODIFIER (ui_in[5]): Time Reversal (Invert timer)
-    wire [9:0] speed_x4  = ui_in[5] ? ~raw_speed : raw_speed; 
+    wire [9:0] speed_x4  = ui_in[5] ? ~base_speed : base_speed; 
 
     // =========================================================
     // =   Shared Geometry: Center Origin & Octagon Math       =
@@ -240,6 +240,7 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     
     wire _unused = &{
         ena, 
+        ui_in[6], // ADDED BACK: ui_in[6] is unused again since we removed overdrive
         uio_in,
         cosmic_anim[9:7], 
         XOR_tunnel[9:8], XOR_tunnel[3:0], 
