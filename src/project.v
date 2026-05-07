@@ -240,7 +240,8 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
         web_ring_pos[9:7], 
         mesh_anim[9:7], 
         quantum_anim[9:7], 
-        tempest_anim[6] // Sinking the top bit of the new 7-bit wire
+        tempest_anim[6], // Sinking the top bit of the new 7-bit wire
+        turbulence[0]    // Sinking the unused bottom bit of the turbulence wire
     }; 
 
 endmodule
