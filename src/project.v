@@ -39,11 +39,11 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
         else if (h_count == 799 && v_count == 524) frame_timer <= frame_timer + 1;
     end
 
-    // Base animation speed (shifted by 2 for smooth 60fps)
-    wire [9:0] base_speed = frame_timer[9:0] << 2;
+    // MODIFIER (ui_in[6]): Hyperspace Overdrive (Fast speed)
+    wire [9:0] raw_speed = ui_in[6] ? (frame_timer[9:0] << 3) : (frame_timer[9:0] << 2);
     
     // MODIFIER (ui_in[5]): Time Reversal (Invert timer)
-    wire [9:0] speed_x4  = ui_in[5] ? ~base_speed : base_speed; 
+    wire [9:0] speed_x4  = ui_in[5] ? ~raw_speed : raw_speed; 
 
     // =========================================================
     // =   Shared Geometry: Center Origin & Octagon Math       =
@@ -55,7 +55,7 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     wire [9:0] min_d = (cx > cy) ? cy : cx;
     wire [9:0] oct_dist = max_d + (min_d >> 1); 
 
-    // Shared Base Accretion Disk Math (Used by Default AND ui_in[0])
+    // Shared Base Accretion Disk Math 
     wire [9:0] m_rot1_x = cx + (cy >> 1);
     wire [9:0] m_rot1_y = (cy > (cx >> 1)) ? (cy - (cx >> 1)) : ((cx >> 1) - cy);
     wire [9:0] max_m1 = (m_rot1_x > m_rot1_y) ? m_rot1_x : m_rot1_y;
@@ -106,14 +106,12 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     // =========================================================
     // =   Engine 3: 16-Point "Super-Mesh" Star (ui_in[0])     =
     // =========================================================
-    // The Rotated Core (45-Degree Shift)
     wire [9:0] rx = (cx + cy) >> 1; 
     wire [9:0] ry = ((cx > cy) ? (cx - cy) : (cy - cx)) >> 1;
     wire [9:0] max_r = (rx > ry) ? rx : ry;
     wire [9:0] min_r = (rx > ry) ? ry : rx;
     wire [9:0] oct_r = max_r + (min_r >> 1);
 
-    // 16-Point Collision (Reuses oct_m1 and oct_m2 to save ASIC area!)
     wire [9:0] mesh_val = oct_dist ^ oct_m1 ^ oct_m2 ^ oct_r;
     wire [9:0] mesh_anim = mesh_val + speed_x4; 
 
@@ -148,8 +146,6 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     // =========================================================
     // =   Engine 5: Super Low-Res Tempest (ui_in[4])          =
     // =========================================================
-    // THE HACK: Downscale by shifting right 4 bits (divide by 16)
-    // Drops the heavy whirlpool logic down to just 6 bits to save placement routing space!
     wire [5:0] t_cx = cx[9:4];
     wire [5:0] t_cy = cy[9:4];
     wire [5:0] t_speed = speed_x4[9:4];
@@ -199,7 +195,6 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
                 R = 2'b00; G = 2'b00; B = 2'b11; 
             end
         end else if (ui_in[0]) begin
-            // MODE (ui_in[0]): Super-Meshed 16-Point Star
             if (mesh_hot) begin
                 R = 2'b11; G = 2'b10; B = 2'b00; 
             end else if (mesh_fila) begin
@@ -208,7 +203,6 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
                 R = 2'b00; G = 2'b00; B = 2'b01; 
             end
         end else begin
-            // DEFAULT: The Cosmic Web "Black Hole"
             if (is_hot_node) begin
                 R = 2'b11; G = 2'b10; B = 2'b00; 
             end else if (is_filament) begin
@@ -219,20 +213,16 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
         end
     end
 
-    // MODIFIER (ui_in[7]): Antimatter Palette Inversion
-    wire [1:0] final_R = ui_in[7] ? ~R : R;
-    wire [1:0] final_G = ui_in[7] ? ~G : G;
-    wire [1:0] final_B = ui_in[7] ? ~B : B;
-
     // --- TinyVGA PMOD Explicit Output Mapping ---
+    // (Notice the logic is completely stripped, mapping directly to R, G, B!)
     assign uo_out[7] = hsync;
-    assign uo_out[6] = final_B[0];
-    assign uo_out[5] = final_G[0];
-    assign uo_out[4] = final_R[0];
+    assign uo_out[6] = B[0];
+    assign uo_out[5] = G[0];
+    assign uo_out[4] = R[0];
     assign uo_out[3] = vsync;
-    assign uo_out[2] = final_B[1];
-    assign uo_out[1] = final_G[1];
-    assign uo_out[0] = final_R[1]; 
+    assign uo_out[2] = B[1];
+    assign uo_out[1] = G[1];
+    assign uo_out[0] = R[1]; 
 
     // Unused pins and explicitly ignored mathematical bits
     assign uio_out = 8'b0;
@@ -240,13 +230,13 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     
     wire _unused = &{
         ena, 
-        ui_in[6], // ADDED BACK: ui_in[6] is unused again since we removed overdrive
+        ui_in[7], // ui_in[7] is officially retired!
         uio_in,
         cosmic_anim[9:7], 
         XOR_tunnel[9:8], XOR_tunnel[3:0], 
         web_ring_pos[9:7], 
         mesh_anim[9:7], 
-        quantum_anim[9:7], 
+        quantum_anim[9:7], // Back to glorious 10-bit resolution
         tempest_anim[5] 
     }; 
 
