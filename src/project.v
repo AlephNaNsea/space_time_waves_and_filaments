@@ -32,18 +32,15 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     wire hsync = ~(h_count >= 656 && h_count < 752); 
     wire vsync = ~(v_count >= 490 && v_count < 492); 
 
-    // --- Animation Timers & Global Modifiers ---
+    // --- Animation Timers ---
     reg [21:0] frame_timer;
     always @(posedge clk) begin
         if (!rst_n) frame_timer <= 0;
         else if (h_count == 799 && v_count == 524) frame_timer <= frame_timer + 1;
     end
 
-    // MODIFIER (ui_in[6]): Hyperspace Overdrive (Fast speed)
-    wire [9:0] raw_speed = ui_in[6] ? (frame_timer[9:0] << 3) : (frame_timer[9:0] << 2);
-    
-    // MODIFIER (ui_in[5]): Time Reversal (Invert timer)
-    wire [9:0] speed_x4  = ui_in[5] ? ~raw_speed : raw_speed; 
+    // Pure, fast forward time flow (Time Reversal removed to save global routing layout)
+    wire [9:0] speed_x4 = frame_timer[9:0] << 2; 
 
     // =========================================================
     // =   Shared Geometry: Center Origin & Octagon Math       =
@@ -122,6 +119,7 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     // =========================================================
     // =   Engine 4: Detailed Qubit Entanglement (ui_in[3])    =
     // =========================================================
+    // Glorious 10-bit resolution preserved!
     wire [9:0] dx0 = (h_count > 220) ? (h_count - 220) : (220 - h_count);
     wire [9:0] max_d0 = (dx0 > cy) ? dx0 : cy;
     wire [9:0] min_d0 = (dx0 > cy) ? cy : dx0;
@@ -144,25 +142,31 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     wire [1:0] q_B = q_core ? 2'b11 : q_thread ? 2'b11 : q_cloud ? 2'b10 : 2'b01;
 
     // =========================================================
-    // =   Engine 5: Super Low-Res Tempest (ui_in[4])          =
+    // =   Engine 5: 7-Bit Turbulent Tempest (ui_in[4])        =
     // =========================================================
-    wire [5:0] t_cx = cx[9:4];
-    wire [5:0] t_cy = cy[9:4];
-    wire [5:0] t_speed = speed_x4[9:4];
+    // THE HACK: Upgraded from 6-bit to 7-bit logic (divide by 8)
+    // Adds just enough adders/XORs to push the chip to ~95% utilization!
+    wire [6:0] t_cx = cx[9:3];
+    wire [6:0] t_cy = cy[9:3];
+    wire [6:0] t_speed = speed_x4[9:3];
 
-    wire [5:0] flow_x = t_cx + t_speed;
-    wire [5:0] flow_y = t_cy - {1'b0, t_speed[5:1]}; 
+    wire [6:0] flow_x = t_cx + t_speed;
+    wire [6:0] flow_y = t_cy - {1'b0, t_speed[6:1]}; 
 
-    wire [4:0] tri_x = flow_x[4:0] ^ {5{flow_x[5]}};
-    wire [4:0] tri_y = flow_y[4:0] ^ {5{flow_y[5]}};
+    wire [5:0] tri_x = flow_x[5:0] ^ {6{flow_x[6]}};
+    wire [5:0] tri_y = flow_y[5:0] ^ {6{flow_y[6]}};
 
-    wire [5:0] t_oct_dist = oct_dist[9:4];
-    wire [5:0] tempest_base = {1'b0, (tri_x ^ tri_y)} + t_oct_dist;
-    wire [5:0] tempest_anim = tempest_base - t_speed;
+    wire [6:0] t_oct_dist = oct_dist[9:3];
+    wire [6:0] tempest_base = {1'b0, (tri_x ^ tri_y)} + t_oct_dist;
+    
+    // THE TURBULENCE INJECTION: Eats a few more gates and adds frothy chop to the waves
+    wire [6:0] turbulence = t_cx ^ t_cy;
+    wire [6:0] tempest_anim = tempest_base - t_speed + {1'b0, turbulence[6:1]};
 
-    wire t_foam  = (tempest_anim[4:0] < 2); 
-    wire t_crest = (tempest_anim[4:0] < 5); 
-    wire t_mid   = (tempest_anim[4:0] < 12); 
+    // Thresholds scaled up to fit the new 7-bit math space
+    wire t_foam  = (tempest_anim[5:0] < 6); 
+    wire t_crest = (tempest_anim[5:0] < 14); 
+    wire t_mid   = (tempest_anim[5:0] < 30); 
 
     wire [1:0] t_R = t_foam ? 2'b11 : t_crest ? 2'b00 : t_mid ? 2'b00 : 2'b00;
     wire [1:0] t_G = t_foam ? 2'b11 : t_crest ? 2'b11 : t_mid ? 2'b10 : 2'b00;
@@ -214,7 +218,6 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     end
 
     // --- TinyVGA PMOD Explicit Output Mapping ---
-    // (Notice the logic is completely stripped, mapping directly to R, G, B!)
     assign uo_out[7] = hsync;
     assign uo_out[6] = B[0];
     assign uo_out[5] = G[0];
@@ -230,14 +233,14 @@ module tt_um_AlephNaNsea_space_time_waves_and_filaments(
     
     wire _unused = &{
         ena, 
-        ui_in[7], // ui_in[7] is officially retired!
+        ui_in[7:5], // All global modifiers are permanently retired!
         uio_in,
         cosmic_anim[9:7], 
         XOR_tunnel[9:8], XOR_tunnel[3:0], 
         web_ring_pos[9:7], 
         mesh_anim[9:7], 
-        quantum_anim[9:7], // Back to glorious 10-bit resolution
-        tempest_anim[5] 
+        quantum_anim[9:7], 
+        tempest_anim[6] // Sinking the top bit of the new 7-bit wire
     }; 
 
 endmodule
